@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from __future__ import division, print_function, absolute_import
-from configbuilder.builder.FileTemplate import FileTemplate
+from configbuilder.builder.file_template import FileTemplate
 from configbuilder.builder.exception.CompilatorError import CompilatorError
 
 class PrncFile(FileTemplate):

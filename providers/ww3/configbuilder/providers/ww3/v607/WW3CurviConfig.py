@@ -20,32 +20,27 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import division, print_function, absolute_import
+import logging
+import os
 
 import itertools
-
-from configbuilder.utils.distance import distance_on_unit_sphere
-from configbuilder.providers.ww3.WW3Config import WW3Config
-from configbuilder.builder.ConfigFile import ConfigFile
-from configbuilder.providers.ww3.v516.build import *
-from configbuilder.builder.exception import *
-from configbuilder.providers.ww3.v516.inp import *
-from configbuilder.builder.exception.DateValueError import DateValueError
-from configbuilder.utils.path import copytree
 import numpy as np
-from netCDF4 import Dataset
-import os
-import logging
-
+from configbuilder.builder.ConfigFile import ConfigFile
+from configbuilder.builder.exception import *
+from configbuilder.builder.exception.DateValueError import DateValueError
+from configbuilder.providers.ww3.WW3Config import WW3Config
+from configbuilder.providers.ww3.v516.build import *
+from configbuilder.providers.ww3.v516.inp import *
 from configbuilder.providers.ww3.v516.inp.BouncFile import BouncFile
 from configbuilder.providers.ww3.v516.inp.OunpFile import OunpFile
+from netCDF4 import Dataset
 
 
 class WW3CurviConfig(WW3Config):
-
     VERSION = "V607"
 
     def __init__(self,
+                 model_source_dir,
                  outputDir,
                  name,
                  symphonie_grid_file,
@@ -67,11 +62,12 @@ class WW3CurviConfig(WW3Config):
                  obc_forcing_dir=None,
                  ):
 
-        WW3Config.__init__(self, os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "model"),
+        WW3Config.__init__(self,
+                           model_source_dir,
                            outputDir,
                            name,
                            wind_forcing_file=wind_forcing_file,
-                           obc_forcing_points= obc_forcing_points,
+                           obc_forcing_points=obc_forcing_points,
                            obc_forcing_dir=obc_forcing_dir,
                            output_points=output_points,
                            exported_nested_boundaries=exported_nested_boundaries,
@@ -82,44 +78,56 @@ class WW3CurviConfig(WW3Config):
                            );
 
         # Makefile
-        self.makefiles.append(CompFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
-                                       WW3Config.NETCDF_INC,
-                                       compiler=compiler,
-                                       mpi_lib=mpi_lib,
-                                       debug_mode=debug_mode))
-        self.makefiles.append(LinkFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
-                                       WW3Config.NETCDF_LIB,
-                                       compiler=compiler,
-                                       mpi_lib=mpi_lib))
+        self.makefiles.append(CompFile(
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "build"),
+            WW3Config.NETCDF_INC,
+            compiler=compiler,
+            mpi_lib=mpi_lib,
+            debug_mode=debug_mode))
+        self.makefiles.append(LinkFile(
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "build"),
+            WW3Config.NETCDF_LIB,
+            compiler=compiler,
+            mpi_lib=mpi_lib))
 
-        self.makefiles.append(SwitchFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build")))
+        self.makefiles.append(SwitchFile(
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "build")))
 
         self.makefiles.append(EnvironnementFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),mpi_lib=mpi_lib,model_dir=self.model_dir,tmp_dir=self.tmp_dir))
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "build"), mpi_lib=mpi_lib, model_dir=self.model_dir, tmp_dir=self.tmp_dir))
 
         # ww3_grid.inp
-        nb = GridFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
-                      config_name=self.config_name,
-                      global_time_step=global_time_step,
-                      spatial_time_step=spatial_time_step,
-                      spectral_time_step=spectral_time_step,
-                      source_time_step=source_time_step,
-                      bathy_dir=self.bathy_dir,
-                      obc_forcing_points=self.obc_forcing_points)
+        nb = GridFile(
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "inp"),
+            config_name=self.config_name,
+            global_time_step=global_time_step,
+            spatial_time_step=spatial_time_step,
+            spectral_time_step=spectral_time_step,
+            source_time_step=source_time_step,
+            bathy_dir=self.bathy_dir,
+            obc_forcing_points=self.obc_forcing_points)
         self.inp_files["ww3_grid"] = nb
 
         # ww3_prnc.inp
-        nb = PrncFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"))
+        nb = PrncFile(
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "inp"))
         self.inp_files["ww3_prnc"] = nb
 
         nb = BouncFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
                          "inp"))
         self.inp_files["ww3_bounc"] = nb
 
         # ww3_shel.inp
         nb = ShelFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "inp"),
             start_time,
             end_time,
             self.output_points,
@@ -130,14 +138,15 @@ class WW3CurviConfig(WW3Config):
 
         # ww3_ounf.inp
         nb = OunfFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+                         "inp"),
             start_time,
             end_time)
         self.inp_files["ww3_ounf"] = nb
 
         # ww3_ounp.inp
         nb = OunpFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
                          "inp"),
             start_time,
             end_time)
@@ -161,9 +170,9 @@ class WW3CurviConfig(WW3Config):
 
                     lon = ncfile.variables["longitude_t"]
                     lat = ncfile.variables["latitude_t"]
-                    bathy =  np.ma.filled(ncfile.variables["hm_w"],fill_value=np.nan)
+                    bathy = np.ma.filled(ncfile.variables["hm_w"], fill_value=np.nan)
                     # SYMPHONIE < v293
-                    #mask = np.ma.filled(ncfile.variables["mask_t"][0],fill_value=np.nan)
+                    # mask = np.ma.filled(ncfile.variables["mask_t"][0],fill_value=np.nan)
                     # SYMPHONIE >= v293
                     mask = np.ma.filled(ncfile.variables["mask_t"], fill_value=np.nan)
 
@@ -195,8 +204,8 @@ class WW3CurviConfig(WW3Config):
                         lat_file.write(str(lat[j, i]) + "\n")
                         bathy_file.write(str(bathy[j, i]) + "\n")
 
-                        #if nb_points > 0 and bathy[j, i] > 0 and [j, i] in self.obc_forcing_points[:,2:4]:
-                        if i ==0 and int(mask[j, i]) == 1 :
+                        # if nb_points > 0 and bathy[j, i] > 0 and [j, i] in self.obc_forcing_points[:,2:4]:
+                        if i == 0 and int(mask[j, i]) == 1:
                             # It is a boundary input point
                             mask_file.write(str(int(2)) + "\n")
                         elif mask[j, i] == bathy[j, i] < 0:
@@ -226,22 +235,3 @@ class WW3CurviConfig(WW3Config):
                                 "SYMPHONIE grid file '" + str(self.symphonie_input_grid_file) + "' doesn't exist", 1005)
 
         WW3Config.make_grid(self)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

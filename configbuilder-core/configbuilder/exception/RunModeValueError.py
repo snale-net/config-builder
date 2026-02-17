@@ -21,6 +21,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import division, print_function, absolute_import
+from configbuilder.exception import ConfigBuilderError
 
-class ConfigFile:
-    BASE_DIR = "/tmp"
+class RunModeValueError(ConfigBuilderError):
+
+    def __init__(self,module,msg,code):
+        ConfigBuilderError.__init__(self,module,msg)
+        self.code_error = code
+        self.message_error = msg
+
+    def __str__(self):
+        return "[ "+self.module + " ] "+self.message_error+ ". Code error: "+str(self.code_error)
+
+
+

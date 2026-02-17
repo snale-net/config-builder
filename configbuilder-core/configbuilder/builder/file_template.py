@@ -24,8 +24,8 @@
 from __future__ import division, print_function, absolute_import
 import os
 from jinja2 import Environment, FileSystemLoader
-from configbuilder.builder.exception import DirectoryError
-from configbuilder.builder.exception.FileError import FileError
+from configbuilder.exception import DirectoryError
+from configbuilder.exception.FileError import FileError
 
 class FileTemplate():
 

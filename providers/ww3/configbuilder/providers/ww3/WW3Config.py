@@ -20,49 +20,58 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import division, print_function, absolute_import
-
-import stat
-
-from osgeo import ogr
-
-from configbuilder.builder.Configuration import Configuration
-from configbuilder.builder.exception import *
-from configbuilder.providers.ww3.v516.inp import *
-from configbuilder.utils.path import copytree
+import glob
 import logging
 import os
-from netCDF4 import Dataset
-from configbuilder.utils.call import execute
-import numpy as np
-import glob
-from datetime import datetime, timedelta
 import re
-from configbuilder.utils.path import path_leaf
 import shutil
+import stat
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import numpy as np
+from configbuilder.builder.exception import *
+from configbuilder.providers.ww3.v516.inp import *
+from netCDF4 import Dataset
+from osgeo import ogr
+
+from configbuilder.builder.configuration import Configuration
+from configbuilder.exception import DirectoryError
+from configbuilder.utils.call import execute
+from configbuilder.utils.path import copytree
+from configbuilder.utils.path import path_leaf
 
 
 class WW3Config(Configuration):
-
+    BASE_DIR = Path(__file__).resolve().parent.parent
     MODEL = "WW3"
-    NETCDF_INC="-I"+os.environ['INCLUDE'].replace(':', ' -I')
-    NETCDF_LIB="-L"+os.environ['LD_LIBRARY_PATH'].replace(':', ' -L')+" -lnetcdf -lnetcdff"
 
-    def __init__(self, base_dir,
-                 outputDir,
-                 name,
-                 output_points,
-                 wind_forcing_file=None,
-                 obc_forcing_points=None,
-                 obc_forcing_dir=None,
-                 exported_nested_boundaries=None,
-                 initial_mode=0,
-                 next_restart_time=None,
-                 compiler="gnu",
-                 mpi_lib = "openmpi"
-                 ):
+    if 'INCLUDE' in os.environ:
+        NETCDF_INC = "-I" + os.environ['INCLUDE'].replace(':', ' -I')
+    else:
+        NETCDF_INC = ""
+    if 'LD_LIBRARY_PATH' in os.environ:
+        NETCDF_LIB = "-L" + os.environ['LD_LIBRARY_PATH'].replace(':', ' -L') + " -lnetcdf -lnetcdff -lpnetcdf"
+    else:
+        NETCDF_LIB = ""
 
-        Configuration.__init__(self,outputDir,name);
+    def __init__(
+            self,
+            model_source_dir,
+            outputDir,
+            name,
+            output_points,
+            wind_forcing_file=None,
+            obc_forcing_points=None,
+            obc_forcing_dir=None,
+            exported_nested_boundaries=None,
+            initial_mode=0,
+            next_restart_time=None,
+            compiler="gnu",
+            mpi_lib="openmpi"
+    ):
+
+        Configuration.__init__(self, model_source_dir, name, outputDir);
 
         self.model_dir = os.path.join(self.output_config_dir, "model")
         self.bin_dir = os.path.join(self.output_config_dir, "model", "bin")
@@ -79,8 +88,6 @@ class WW3Config(Configuration):
 
         self.mpi_lib = mpi_lib
         self.compiler = compiler
-
-        self.set_base_config_dir(base_dir)
 
         # Makefile
         self.makefiles = []
@@ -100,31 +107,39 @@ class WW3Config(Configuration):
         self.obc_forcing_points = {}
 
         # Config
-        self.wind_src_forcing_file=wind_forcing_file
+        self.wind_src_forcing_file = wind_forcing_file
         if self.wind_src_forcing_file is not None:
             self.wind_forcing_enable = True
 
         if obc_forcing_points is not None:
             self.set_obc_forcing_points(obc_forcing_points)
 
-        self.obc_src_forcing_dir=obc_forcing_dir
-        if self.obc_src_forcing_dir is not None and len(self.obc_forcing_points[0]) > 0 :
+        self.obc_src_forcing_dir = obc_forcing_dir
+        if self.obc_src_forcing_dir is not None and len(self.obc_forcing_points[0]) > 0:
             self.obc_forcing_enable = True
-        elif self.obc_src_forcing_dir is None and len(self.obc_forcing_points[0]) > 0 or self.obc_src_forcing_dir is not None and len(self.obc_forcing_points[0]) == 0:
+        elif self.obc_src_forcing_dir is None and len(
+                self.obc_forcing_points[0]) > 0 or self.obc_src_forcing_dir is not None and len(
+            self.obc_forcing_points[0]) == 0:
             raise ValueError(WW3Config.MODEL,
-                                       "'obc_forcing_points' and 'obc_forcing_dir' have to be initialized", 1005)
+                             "'obc_forcing_points' and 'obc_forcing_dir' have to be initialized", 1005)
 
         self.set_output_points(output_points)
         self.set_exported_nested_boundaries(exported_nested_boundaries)
         self.set_initial_mode(initial_mode)
         self.set_next_restart_time(next_restart_time)
 
+    def check_model_source_dir(self):
+
+        if (not os.path.exists(os.path.join(self.model_source_dir, "ftn"))):
+            raise DirectoryError("WW3Config",
+                                 "[Model directory] is not a proper WW3 instance : No ftn directory", 1005)
+
     def set_wind_forcing_file(self, value):
 
         if self.wind_forcing_enable:
             if os.path.isfile(value):
                 self.clean_wind_forcing_dir()
-                shutil.copyfile(value,os.path.join(self.wind_forcing_dir,os.path.basename(value)))
+                shutil.copyfile(value, os.path.join(self.wind_forcing_dir, os.path.basename(value)))
             else:
                 raise DirectoryError(WW3Config.MODEL,
                                      "[Wind forcing directory] No such file: '" + value + "'", 1005)
@@ -137,7 +152,7 @@ class WW3Config(Configuration):
 
                 if os.listdir(value):
                     self.clean_obc_forcing_dir()
-                    copytree(value,self.obc_forcing_dir)
+                    copytree(value, self.obc_forcing_dir)
                 else:
                     raise DirectoryError(WW3Config.MODEL,
                                          "[OBC forcing directory] '" + value + "' is empty", 1005)
@@ -188,8 +203,8 @@ class WW3Config(Configuration):
                 try:
                     file = open(value, 'r')
                     for line in file.readlines():
-                       i,j, lon, lat,name = line.strip().split(" ")
-                       self.exported_nested_boundaries[name] = [lon,lat]
+                        i, j, lon, lat, name = line.strip().split(" ")
+                        self.exported_nested_boundaries[name] = [lon, lat]
                 except Exception as ex:
                     logging.error("'" + str(ex) + "' Unable to read nested boundaries")
             else:
@@ -244,7 +259,6 @@ class WW3Config(Configuration):
         else:
             self.next_restart_time = None
 
-
     def make_grid(self):
 
         if "ww3_grid" not in self.inp_files:
@@ -256,7 +270,7 @@ class WW3Config(Configuration):
 
         logging.info("Making grid")
 
-        execute(["./ww3_grid"],cwd=self.config_dir)
+        execute(["./ww3_grid"], cwd=self.config_dir)
 
     def make_wind_forcing(self):
 
@@ -399,7 +413,7 @@ class WW3Config(Configuration):
 
         try:
             if os.path.isfile(os.path.join(self.config_dir, "nest.ww3")):
-                os.unlink(os.path.join(self.config_dir,  "nest.ww3"))
+                os.unlink(os.path.join(self.config_dir, "nest.ww3"))
         except Exception as ex:
             raise FileError(WW3Config.MODEL, ex, 1005)
 
@@ -426,7 +440,8 @@ class WW3Config(Configuration):
 
         if os.listdir(self.output_config_dir):
             raise DirectoryError(WW3Config.MODEL,
-                                 "[Output configuration directory] '" + str(self.output_config_dir) + "' is not empty", 1005)
+                                 "[Output configuration directory] '" + str(self.output_config_dir) + "' is not empty",
+                                 1005)
 
         if self.base_config_dir is None:
             raise DirectoryError(WW3Config.MODEL,
@@ -435,13 +450,13 @@ class WW3Config(Configuration):
 
         if len(self.makefiles) == 0:
             raise MakeError(WW3Config.MODEL,
-                                 "[Makefile] No makefiles are settled",
+                            "[Makefile] No makefiles are settled",
                             1005)
 
         logging.info("Create directory and copy source code...")
 
         # 1. Copie du modèle
-        copytree(self.base_config_dir,self.output_config_dir)
+        copytree(self.base_config_dir, self.output_config_dir)
 
         # 2. Création de l'arborescence de la config
         os.mkdir(self.config_dir)
@@ -462,12 +477,12 @@ class WW3Config(Configuration):
 
             # INP  files
             for nb in self.inp_files.values():
-                logging.info("Making "+nb.template_filename+" ...")
+                logging.info("Making " + nb.template_filename + " ...")
                 nb.generate(self.config_dir)
 
             # Tweaks
             for tw in self.tweaks:
-                logging.info("Making "+tw.template_filename+" ...")
+                logging.info("Making " + tw.template_filename + " ...")
                 tw.generate(self.ftn_dir)
 
             self.make_grid()
@@ -493,17 +508,17 @@ class WW3Config(Configuration):
             logging.info("Build executable...")
 
             my_env = os.environ.copy()
-            my_env["WWATCH3_ENV"] = os.path.join(self.bin_dir,"wwatch3.env")
+            my_env["WWATCH3_ENV"] = os.path.join(self.bin_dir, "wwatch3.env")
             my_env["WWATCH3_NETCDF"] = "NC4"
             # On trouve le path de nc-config
             res = [i for i in os.environ['PATH'].split(':') if "netcdf" in i]
             nc_config = [i for i in res if "/c/" in i]
 
-            my_env["NETCDF_CONFIG"] = os.path.join(nc_config[0],"nc-config")
+            my_env["NETCDF_CONFIG"] = os.path.join(nc_config[0], "nc-config")
 
             try:
-                execute(["./w3_clean","-c"], cwd=self.bin_dir,env=my_env)
-                execute(["./w3_setup","../ -s current -c ",self.compiler.lower() ,"-q"], cwd=self.bin_dir,env=my_env)
+                execute(["./w3_clean", "-c"], cwd=self.bin_dir, env=my_env)
+                execute(["./w3_setup", "../ -s current -c ", self.compiler.lower(), "-q"], cwd=self.bin_dir, env=my_env)
 
                 # Add execution to comp file
                 st = os.stat(os.path.join(self.bin_dir, "comp"))
@@ -513,21 +528,21 @@ class WW3Config(Configuration):
                 st = os.stat(os.path.join(self.bin_dir, "link"))
                 os.chmod(os.path.join(self.bin_dir, "link"), st.st_mode | stat.S_IEXEC)
 
-                execute(["./w3_make"], cwd=self.bin_dir,env=my_env)
+                execute(["./w3_make"], cwd=self.bin_dir, env=my_env)
 
             except ExecutionError as ex:
-                raise MakeError(WW3Config.MODEL,str(ex), 1005)
+                raise MakeError(WW3Config.MODEL, str(ex), 1005)
 
-            if not os.path.isfile(os.path.join(self.exe_dir, "ww3_shel")) or not os.path.isfile(os.path.join(self.exe_dir, "ww3_prnc")):
+            if not os.path.isfile(os.path.join(self.exe_dir, "ww3_shel")) or not os.path.isfile(
+                    os.path.join(self.exe_dir, "ww3_prnc")):
                 raise MakeError(WW3Config.MODEL,
                                 "No executable generated", 1005)
 
-            copytree(self.exe_dir,self.config_dir)
+            copytree(self.exe_dir, self.config_dir)
 
     def check_integrity(self):
 
         if self.exists():
-
             logging.info("Check integrity...")
 
     def run(self):
@@ -553,7 +568,7 @@ class WW3Config(Configuration):
                 self.inp_files["ww3_shel"].generate(self.config_dir)
 
                 # 5. Run test
-                execute(["mpirun","-np","7","./ww3_shel"],cwd=self.config_dir)
+                execute(["mpirun", "-np", "7", "./ww3_shel"], cwd=self.config_dir)
 
                 # 6. Restore end_time in notebook_time
                 self.inp_files["ww3_shel"].set_end_time(end_time)
@@ -569,16 +584,4 @@ class WW3Config(Configuration):
             logging.info("Run...")
 
             # 10. Run
-            execute(["mpirun", "-np", "7","./ww3_shel"],cwd=self.config_dir)
-
-
-
-
-
-
-
-
-
-
-
-
+            execute(["mpirun", "-np", "7", "./ww3_shel"], cwd=self.config_dir)

@@ -20,38 +20,49 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import division, print_function, absolute_import
-from configbuilder.builder.Configuration import Configuration
-from configbuilder.builder.exception import *
-from configbuilder.providers.ww3.v516.inp import *
-from configbuilder.utils.path import copytree
+import glob
 import logging
 import os
-from netCDF4 import Dataset
-from configbuilder.utils.call import execute
-import numpy as np
-import glob
-from datetime import datetime, timedelta
 import re
-from configbuilder.utils.path import path_leaf
 import shutil
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import numpy as np
+from configbuilder.builder.exception import *
+from configbuilder.providers.swan.v431.swn import *
+from netCDF4 import Dataset
+
+from configbuilder.builder.configuration import Configuration
+from configbuilder.utils.call import execute
+from configbuilder.utils.path import copytree
+from configbuilder.utils.path import path_leaf
 
 
 class SwanConfig(Configuration):
-
+    BASE_DIR = Path(__file__).resolve().parent.parent
     MODEL = "SWAN"
-    NETCDF_INC="-I"+os.environ['INCLUDE'].replace(':', ' -I')
-    NETCDF_LIB="-L"+os.environ['LD_LIBRARY_PATH'].replace(':', ' -L')+" -lnetcdf -lnetcdff"
 
-    def __init__(self,base_dir,
-                 outputDir,
-                 name,
-                 wind_forcing_dir=None,
-                 obc_forcing_dir=None,
-                 initial_mode=0,
-                 next_restart_time=None):
+    if 'INCLUDE' in os.environ:
+        NETCDF_INC = "-I" + os.environ['INCLUDE'].replace(':', ' -I')
+    else:
+        NETCDF_INC = ""
+    if 'LD_LIBRARY_PATH' in os.environ:
+        NETCDF_LIB = "-L" + os.environ['LD_LIBRARY_PATH'].replace(':', ' -L') + " -lnetcdf -lnetcdff -lpnetcdf"
+    else:
+        NETCDF_LIB = ""
 
-        Configuration.__init__(self,outputDir,name);
+    def __init__(
+            self,
+            model_source_dir,
+            outputDir,
+            name,
+            wind_forcing_dir=None,
+            obc_forcing_dir=None,
+            initial_mode=0,
+            next_restart_time=None):
+
+        Configuration.__init__(self, model_source_dir, name, outputDir);
 
         self.model_dir = os.path.join(self.output_config_dir, "model")
 
@@ -61,8 +72,6 @@ class SwanConfig(Configuration):
         self.obc_forcing_dir = os.path.join(self.output_config_dir, self.config_name, "obc")
         self.graphique_dir = os.path.join(self.output_config_dir, self.config_name, "graphiques")
         self.restart_dir = os.path.join(self.output_config_dir, self.config_name, "restart")
-
-        self.set_base_config_dir(base_dir)
 
         # Makefile
         self.makefiles = {}
@@ -78,6 +87,12 @@ class SwanConfig(Configuration):
 
         self.set_initial_mode(initial_mode)
         self.set_next_restart_time(next_restart_time)
+
+    def check_model_source_dir(self):
+
+        if (not os.path.exists(os.path.join(self.model_source_dir, "Makefile"))):
+            raise DirectoryError("SymphonieConfig",
+                                 "[Model directory] is not a proper SWAN instance : No fortran files", 1005)
 
     def set_wind_forcing_dir(self, value):
 
@@ -160,9 +175,8 @@ class SwanConfig(Configuration):
                 except OSError as ex:
                     logging.debug("'" + str(os.path.join(self.wind_forcing_dir, file)) + "' is not a NetCDF file")
 
-
-            if len(files)==0:
-                raise FileError("WindForcing","No wind forcing file found",1005)
+            if len(files) == 0:
+                raise FileError("WindForcing", "No wind forcing file found", 1005)
 
     def make_obc_forcing(self):
 
@@ -307,7 +321,8 @@ class SwanConfig(Configuration):
 
         if os.listdir(self.output_config_dir):
             raise DirectoryError(SwanConfig.MODEL,
-                                 "[Output configuration directory] '" + str(self.output_config_dir) + "' is not empty", 1005)
+                                 "[Output configuration directory] '" + str(self.output_config_dir) + "' is not empty",
+                                 1005)
 
         if self.base_config_dir is None:
             raise DirectoryError(SwanConfig.MODEL,
@@ -316,13 +331,13 @@ class SwanConfig(Configuration):
 
         if len(self.makefiles) == 0:
             raise MakeError(SwanConfig.MODEL,
-                                 "[Makefile] No makefiles are settled",
+                            "[Makefile] No makefiles are settled",
                             1005)
 
         logging.info("Create directory and copy source code...")
 
         # 1. Copie du modèle
-        copytree(self.base_config_dir,self.output_config_dir)
+        copytree(self.base_config_dir, self.output_config_dir)
 
         # 2. Création de l'arborescence de la config
         os.mkdir(self.config_dir)
@@ -342,17 +357,17 @@ class SwanConfig(Configuration):
 
             # SWN  files
             for nb in self.swn_files.values():
-                logging.info("Making "+nb.template_filename+" ...")
+                logging.info("Making " + nb.template_filename + " ...")
                 nb.generate(self.config_dir)
 
             # Tweaks
             for tw in self.tweaks:
-                logging.info("Making "+tw.template_filename+" ...")
+                logging.info("Making " + tw.template_filename + " ...")
                 tw.generate(self.ftn_dir)
 
             # Interpolate forcings
             self.make_wind_forcing()
-            #self.make_obc_list()
+            # self.make_obc_list()
 
             self.clean_config_restart()
 
@@ -371,9 +386,9 @@ class SwanConfig(Configuration):
             res = [i for i in os.environ['PATH'].split(':') if "netcdf" in i]
             nc_config = [i for i in res if "/fortran/" in i]
 
-            print(nc_config[0][0:len(nc_config[0])-3])
+            print(nc_config[0][0:len(nc_config[0]) - 3])
 
-            self.makefiles["macro.inc"].set_netcdf_dir(nc_config[0][0:len(nc_config[0])-3])
+            self.makefiles["macro.inc"].set_netcdf_dir(nc_config[0][0:len(nc_config[0]) - 3])
 
             # Makefile
             for mk in self.makefiles:
@@ -383,20 +398,20 @@ class SwanConfig(Configuration):
             logging.info("Build executable...")
 
             try:
-                execute(["make","mpi"], cwd=self.model_dir)
-                execute(["chmod","+x","swanrun"], cwd=self.model_dir)
+                execute(["make", "mpi"], cwd=self.model_dir)
+                execute(["chmod", "+x", "swanrun"], cwd=self.model_dir)
 
             except ExecutionError as ex:
-                raise MakeError(SwanConfig.MODEL,str(ex), 1005)
+                raise MakeError(SwanConfig.MODEL, str(ex), 1005)
 
-            if not os.path.isfile(os.path.join(self.model_dir, "swan.exe")) or not os.path.isfile(os.path.join(self.model_dir, "swanrun")):
+            if not os.path.isfile(os.path.join(self.model_dir, "swan.exe")) or not os.path.isfile(
+                    os.path.join(self.model_dir, "swanrun")):
                 raise MakeError(SwanConfig.MODEL,
                                 "No executable generated", 1005)
 
     def check_integrity(self):
 
         if self.exists():
-
             logging.info("Check integrity...")
 
     def run(self):
@@ -406,7 +421,7 @@ class SwanConfig(Configuration):
             logging.info("Run...")
 
             my_env = os.environ.copy()
-            my_env["PATH"] = self.model_dir+":"+  my_env["PATH"]
+            my_env["PATH"] = self.model_dir + ":" + my_env["PATH"]
 
             # 1. On teste si le notebook_time a été initialisé par la classe fille
             if "config" not in self.swn_files:
@@ -425,7 +440,7 @@ class SwanConfig(Configuration):
                 self.inp_files["ww3_shel"].generate(self.config_dir)
 
                 # 5. Run test
-                execute("./ww3_shel",cwd=self.config_dir)
+                execute("./ww3_shel", cwd=self.config_dir)
 
                 # 6. Restore end_time in notebook_time
                 self.inp_files["ww3_shel"].set_end_time(end_time)
@@ -441,16 +456,4 @@ class SwanConfig(Configuration):
             logging.info("Run...")
 
             # 10. Run
-            execute([os.path.join(self.model_dir,"swanrun"),"-input","config.swn"],cwd=self.config_dir,env=my_env)
-
-
-
-
-
-
-
-
-
-
-
-
+            execute([os.path.join(self.model_dir, "swanrun"), "-input", "config.swn"], cwd=self.config_dir, env=my_env)

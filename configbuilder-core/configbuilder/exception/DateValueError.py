@@ -22,9 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from __future__ import division, print_function, absolute_import
-from configbuilder.builder.exception.ConfigBuilderError import ConfigBuilderError
+from configbuilder.exception import ConfigBuilderError
 
-class FileError(ConfigBuilderError):
+class DateValueError(ConfigBuilderError):
 
     def __init__(self,module,msg,code):
         ConfigBuilderError.__init__(self,module,msg)

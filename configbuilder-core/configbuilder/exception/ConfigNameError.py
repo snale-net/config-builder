@@ -22,9 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from __future__ import division, print_function, absolute_import
-from configbuilder.builder.exception import ConfigBuilderError
+from configbuilder.exception import ConfigBuilderError
 
-class RunModeValueError(ConfigBuilderError):
+class ConfigNameError(ConfigBuilderError):
 
     def __init__(self,module,msg,code):
         ConfigBuilderError.__init__(self,module,msg)

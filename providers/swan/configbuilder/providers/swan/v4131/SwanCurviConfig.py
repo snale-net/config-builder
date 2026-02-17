@@ -20,25 +20,25 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import division, print_function, absolute_import
-from configbuilder.providers.swan.SwanConfig import SwanConfig
-from configbuilder.builder.ConfigFile import ConfigFile
-from configbuilder.providers.swan.v4131.build import *
-from configbuilder.builder.exception import *
-from configbuilder.providers.swan.v4131.swn import *
-from configbuilder.builder.exception.DateValueError import DateValueError
-from configbuilder.utils.path import copytree
-import numpy as np
-from netCDF4 import Dataset
-import os
 import logging
+import os
+
+import numpy as np
+from configbuilder.builder.ConfigFile import ConfigFile
+from configbuilder.builder.exception import *
+from configbuilder.builder.exception.DateValueError import DateValueError
+from configbuilder.providers.swan.SwanConfig import SwanConfig
+from configbuilder.providers.swan.v4131.build import *
+from configbuilder.providers.swan.v4131.swn import *
+from netCDF4 import Dataset
 
 
 class SwanCurviConfig(SwanConfig):
-
+  
     VERSION = "V4131"
 
     def __init__(self,
+                 model_source_dir,
                  outputDir,
                  name,
                  symphonie_grid_file,
@@ -54,7 +54,7 @@ class SwanCurviConfig(SwanConfig):
                  debug_mode=False,
                  ):
 
-        SwanConfig.__init__(self, os.path.join(ConfigFile.BASE_DIR, "configbuilder", SwanConfig.MODEL.lower(), SwanCurviConfig.VERSION.lower(), "model"),
+        SwanConfig.__init__(self, model_source_dir,
                             outputDir,
                             name,
                             wind_forcing_dir=wind_forcing_dir,
@@ -63,7 +63,7 @@ class SwanCurviConfig(SwanConfig):
                             next_restart_time=next_restart_time);
 
         # Makefile
-        self.makefiles["macro.inc"] = MacrosFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", SwanConfig.MODEL.lower(), SwanCurviConfig.VERSION.lower(), "build"),
+        self.makefiles["macro.inc"] = MacrosFile(os.path.join(SwanConfig.BASE_DIR, SwanConfig.MODEL.lower(), SwanCurviConfig.VERSION.lower(), "build"),
                                                  compiler=compiler,
                                                  mpi_lib=mpi_lib,
                                                  debug_mode=debug_mode)
@@ -71,7 +71,7 @@ class SwanCurviConfig(SwanConfig):
         # Swn files
         # config.swn
         nb = SwnFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", SwanConfig.MODEL.lower(), SwanCurviConfig.VERSION.lower(), "swn"),
+            os.path.join(SwanConfig.BASE_DIR, SwanConfig.MODEL.lower(), SwanCurviConfig.VERSION.lower(), "swn"),
             config_name=self.config_name,
             start_time=start_time,
             end_time=end_time,

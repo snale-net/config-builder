@@ -20,25 +20,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import division, print_function, absolute_import
+import logging
+import os
+from pathlib import Path
 
 import itertools
-
-from configbuilder.utils.distance import distance_on_unit_sphere
-from configbuilder.providers.ww3.WW3Config import WW3Config
-from configbuilder.builder.ConfigFile import ConfigFile
-from configbuilder.providers.ww3.v516.build import *
-from configbuilder.builder.exception import *
-from configbuilder.providers.ww3.v516.inp import *
-from configbuilder.builder.exception.DateValueError import DateValueError
-from configbuilder.utils.path import copytree
 import numpy as np
-from netCDF4 import Dataset
-import os
-import logging
-
+from configbuilder.builder.exception import *
+from configbuilder.builder.exception.DateValueError import DateValueError
+from configbuilder.providers.ww3.WW3Config import WW3Config
+from configbuilder.providers.ww3.v516.build import *
+from configbuilder.providers.ww3.v516.inp import *
 from configbuilder.providers.ww3.v516.inp.BouncFile import BouncFile
 from configbuilder.providers.ww3.v516.inp.OunpFile import OunpFile
+from netCDF4 import Dataset
 
 
 class WW3CurviConfig(WW3Config):
@@ -46,6 +41,7 @@ class WW3CurviConfig(WW3Config):
     VERSION = "V516"
 
     def __init__(self,
+                 model_source_dir,
                  outputDir,
                  name,
                  symphonie_grid_file,
@@ -67,7 +63,8 @@ class WW3CurviConfig(WW3Config):
                  obc_forcing_dir=None,
                  ):
 
-        WW3Config.__init__(self, os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "model"),
+        WW3Config.__init__(self,
+                           model_source_dir,
                            outputDir,
                            name,
                            wind_forcing_file=wind_forcing_file,
@@ -82,23 +79,25 @@ class WW3CurviConfig(WW3Config):
                            );
 
         # Makefile
-        self.makefiles.append(CompFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
+        self.makefiles.append(CompFile(os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
                                        WW3Config.NETCDF_INC,
                                        compiler=compiler,
                                        mpi_lib=mpi_lib,
                                        debug_mode=debug_mode))
-        self.makefiles.append(LinkFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
+        self.makefiles.append(LinkFile(os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
                                        WW3Config.NETCDF_LIB,
                                        compiler=compiler,
                                        mpi_lib=mpi_lib))
 
-        self.makefiles.append(SwitchFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build")))
+        self.makefiles.append(SwitchFile(os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build")))
 
         self.makefiles.append(EnvironnementFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),mpi_lib=mpi_lib,model_dir=self.model_dir,tmp_dir=self.tmp_dir))
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "build"),
+            mpi_lib=mpi_lib,
+            model_dir=self.model_dir,tmp_dir=self.tmp_dir))
 
         # ww3_grid.inp
-        nb = GridFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
+        nb = GridFile(os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
                       config_name=self.config_name,
                       global_time_step=global_time_step,
                       spatial_time_step=spatial_time_step,
@@ -109,17 +108,17 @@ class WW3CurviConfig(WW3Config):
         self.inp_files["ww3_grid"] = nb
 
         # ww3_prnc.inp
-        nb = PrncFile(os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"))
+        nb = PrncFile(os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"))
         self.inp_files["ww3_prnc"] = nb
 
         nb = BouncFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
                          "inp"))
         self.inp_files["ww3_bounc"] = nb
 
         # ww3_shel.inp
         nb = ShelFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
             start_time,
             end_time,
             self.output_points,
@@ -130,14 +129,14 @@ class WW3CurviConfig(WW3Config):
 
         # ww3_ounf.inp
         nb = OunfFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(), "inp"),
             start_time,
             end_time)
         self.inp_files["ww3_ounf"] = nb
 
         # ww3_ounp.inp
         nb = OunpFile(
-            os.path.join(ConfigFile.BASE_DIR, "configbuilder", WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
+            os.path.join(WW3Config.BASE_DIR, WW3Config.MODEL.lower(), WW3CurviConfig.VERSION.lower(),
                          "inp"),
             start_time,
             end_time)

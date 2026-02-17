@@ -1,6 +1,5 @@
 #! /usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-#
 # MIT License
 # Copyright (c) 2024 [SNALE - French SAS Company - RCS 951 724 616]
 #
@@ -21,8 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import division, print_function, absolute_import
-from configbuilder.builder.exception.ConfigBuilderError import ConfigBuilderError
+from configbuilder.exception.ConfigBuilderError import ConfigBuilderError
 
 class ConfigIntegrityError(ConfigBuilderError):
 
