@@ -1,0 +1,43 @@
+$ -------------------------------------------------------------------- $
+$ WAVEWATCH III Grid output post-processing                            $
+$--------------------------------------------------------------------- $
+$ Time, time increment and number of outputs
+$
+{{candidate.start_time.strftime('%Y%m%d %H%M%S')}} 3600 {{candidate.end_time.strftime('%Y%m%d %H%M%S')}}
+$
+$
+$ Output request flags identifying fields as in ww3_shel.inp. See that
+$ file for a full documentation of field output options. Namelist type
+$ selection is used here (for alternative F/T flags, see ww3_shel.inp).
+$
+  N
+  DPT WND CUR WLV HS LM T01 HIG DIR FP UST CHA TAW SXY TWO BHD FOC WCH USS P2S WN
+$
+$
+$--------------------------------------------------------------------- $
+$ Output type 4 [3,4] (version netCDF)   
+$        and   variable type 4 [2 = SHORT, 3 = it depends , 4 = REAL]
+$ Output type 0 1 2 [0,1,2,3,4,5]   (swell partition)
+$ variables T [T] or not [F] in the same file
+$
+  4 4
+  0 1 2
+  T
+$
+$ -------------------------------------------------------------------- $
+$ File prefix
+$ number of characters in date
+$ IX, IY range
+$
+ ww3.   
+6
+1 {{candidate.x_size}} 1 {{candidate.y_size}}
+
+$ For each field and time a new file is generated with the file name
+$ ww3.date_xxx.nc , where date is a conventional time idicator with S3
+$ characters,
+$ and xxx is a field identifier.
+$
+$ -------------------------------------------------------------------- $
+$ End of input file                                                    $
+$ -------------------------------------------------------------------- $

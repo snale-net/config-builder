@@ -1,0 +1,139 @@
+$ -------------------------------------------------------------------- $
+$ WAVEWATCH III Grid preprocessor input file $
+$ -------------------------------------------------------------------- $
+'{{candidate.config_name}}'
+$
+ {{candidate.incr_freq}} {{candidate.start_freq}} {{candidate.nb_freq}}  {{candidate.nb_angle_section}} 0.
+$
+   F T T T T T
+$
+{{candidate.global_time_step}} {{candidate.spatial_time_step}} {{candidate.spectral_time_step}} {{candidate.source_time_step}}
+$
+$ Input and dissipation with saturation-based dissipation
+$ 
+$TEST451
+$ Wind
+&SIN4 ZWND = 10.0, ALPHA0 = 0.00950, Z0MAX = 1.00200, BETAMAX = 1.52000,
+SINTHP = 2.00000, ZALP = 0.00600, TAUWSHELTER = 1.00000, SWELLFPAR = 1,
+SWELLF = 0.80000, SWELLF2 =-0.01800, SWELLF3 = 0.01500, SWELLF4 = 100000.0,
+SWELLF5 = 1.20000, SWELLF6 = 0.00000, SWELLF7 =   230000.00, Z0RAT = 0.04000 /
+$ Dissipation
+&SDS4 WNMEANP = 0.50, WNMEANPTAIL= 0.50,FXFM3 =9.9,SDSC1 =  0.0000E+00,
+SDSC2 = -0.2200E-04,SDSBCK =  0.0000E+00,SDSHCK = 0,SDSDTH = 80.0,
+SDSBR =   0.9E-03,SDSCUM = -0.40344,SDSCOS =2.0,SDSC4 =  1.00, SDSP = 2.00,
+SDSC5 =  0.0000E+00, SDSC6 =  0.3000E+00 /
+&SNL1 NLPROP = 2.5E7 /
+$
+$TEST405 
+$ Wind
+$&SIN4 ZWND = 10.0, ALPHA0 = 0.00950, Z0MAX = 0.00200, BETAMAX = 1.55000,
+$SINTHP = 2.00000, ZALP = 0.00600, TAUWSHELTER = 0.00000, SWELLFPAR = 1,
+$SWELLF = 0.80000, SWELLF2 =-0.01800, SWELLF3 = 0.01500, SWELLF4 = 100000.0,
+$SWELLF5 = 1.20000, SWELLF6 = 0.00000, SWELLF7 =   230000.00, Z0RAT = 0.04000 /
+$ Dissipation
+$&SDS4 WNMEANP = 0.50, WNMEANPTAIL= 0.50,FXFM3 =2.5,SDSC1 =  0.0000E+00,
+$SDSC2 = -0.2200E-04,SDSBCK =  0.0000E+00,SDSHCK = 0,SDSDTH = 80.0,
+$SDSBR =   0.85E-03,SDSCUM = 0.0,SDSCOS =2.0,SDSC4 =  1.00, SDSP = 2.00,
+$SDSC5 =  0.0000E+00, SDSC6 =  0.3000E+00 /
+$&SNL1 NLPROP = 2.7E7 /
+$
+$TEST405 version corrigée par Fabrice
+$ Wind
+$&SIN4 BETAMAX = 1.55, ZWND = 10., Z0MAX = 0.0020,   
+$TAUWSHELTER = 0.0 /
+$ Dissipation
+$&SDS4 SDSC2 = -2.2E-5 , SDSBR = 0.00085, SDSCUM = 0.000, 
+$SDSBR = 0.00085, FXFM3= 2.5 /
+$&SNL1 NLPROP = 2.7E7 /
+$
+$
+&REF1 REFCOAST=0.01 /
+$ Deferlement default
+&SDB1 BJALFA =  1.000, BJGAM =  0.730, BJFLAG = .TRUE. /
+$&SDB1 BJALFA =  1.000, BJGAM =  0.1, BJFLAG = .TRUE. /
+$&UG  UGOBCAUTO =  T, UGOBCDEPTH = -15.0,  EXPFSN = T /
+$&OUTS E3D = 1, P2SF = 1, US3D  = 1, I1US3D = 1., I2US3D = 30. /
+$
+END OF NAMELISTS
+$
+$
+$ Define grid -------------------------------------------------------- $
+$  5 Limiting bottom depth (m) to discriminate between land and sea
+$    points, minimum water depth (m) as allowed in model, unit number
+$    of file with bottom depths, scale factor for bottom depths (mult.),
+$    IDLA, IDFM, format for formatted read, FROM and filename.
+$      IDLA : Layout indicator :
+$                  1   : Read line-by-line bottom to top.
+$                  2   : Like 1, single read statement.
+$                  3   : Read line-by-line top to bottom.
+$                  4   : Like 3, single read statement.
+$      IDFM : format indicator :
+$                  1   : Free format.
+$                  2   : Fixed format with above format descriptor.
+$                  3   : Unformatted.
+$      FROM : file type parameter
+$               'UNIT' : open file by unit number only.
+$               'NAME' : open file by name and assign to unit.
+$
+$    If the above unit number equals 10, then the bottom depths are read from
+$    this file.  The depths must follow the above record.  No comment lines are
+$    allowed within the depth input. In the case of unstructured grids, the file
+$    is expected to be a GMESH grid file containing node and element lists.
+$
+   'CURV'  T  'NONE'
+   {{candidate.x_size}}     {{candidate.y_size}}
+   20 1. 0.  2 1 '(f20.9)' 'NAME' 'bathy/longitude.dat'
+   20 1. 0.  2 1 '(f20.9)' 'NAME' 'bathy/latitude.dat'
+   0.1  1.0 20 -1. 2 1 '(f20.9)' 'NAME' 'bathy/bathy.dat'
+   20 2 2 '(I1)' 'NAME' 'bathy/mask.dat'
+$
+$ Input boundary points from segment data ( FROM = PART ) ------------ $
+$   An unlimited number of lines identifying points at which input
+$   boundary conditions are to be defined. If the actual input data is
+$   not defined in the actual wave model run, the initial conditions
+$   will be applied as constant boundary conditions. Each line contains:
+$     Discrete grid counters (IX,IY) of the active point and a
+$     connect flag. If this flag is true, and the present and previous
+$     point are on a grid line or diagonal, all intermediate points
+$     are also defined as boundary points.
+$
+$
+$
+$  Close list by defining point (0,0) (mandatory)
+$
+$      0   0   F
+$
+$ Excluded grid points from segment data ( FROM != PART )
+$   First defined as lines, identical to the definition of the input
+$   boundary points, and closed the same way.
+$
+$      0   0   F
+$
+$   Second, define a point in a closed body of sea points to remove
+$   the entire body of sea points. Also close by point (0,0)
+$
+$      0   0
+$
+$ Output boundary points --------------------------------------------- $
+$ Output boundary points are defined as a number of straight lines,
+$ defined by its starting point (X0,Y0), increments (DX,DY) and number
+$ of points. A negative number of points starts a new output file.
+$ Note that this data is only generated if requested by the actual
+$ program. Example again for spherical grid in degrees. Note, these do
+$ not need to be defined for data transfer between grids in te multi
+$ grid driver.
+$
+$     1.75  1.50  0.25 -0.10     3
+$     2.25  1.50 -0.10  0.00    -6
+$     0.10  0.10  0.10  0.00   -10
+$
+$  Close list by defining line with 0 points (mandatory)
+$
+     0.    0.    0.    0.       0
+$ -------------------------------------------------------------------- $
+$ End of input file $
+$ -------------------------------------------------------------------- $
+
+
+
+
