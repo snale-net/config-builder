@@ -20,13 +20,9 @@ class Configuration(ABC):
 
     def set_model_source_dir(self, value):
 
-        if (os.path.isdir(value)):
+        if value and (os.path.isdir(value)):
             self.model_source_dir = value
-        else:
-            raise DirectoryError("Configuration",
-                                 "[Model directory] No such directory: '"+value + "'", 1005)
-
-        self.check_model_source_dir();
+            self.check_model_source_dir();
 
     def set_output_config_dir(self, value):
 

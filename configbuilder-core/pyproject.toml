@@ -24,7 +24,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "configbuilder-core"
-version = "0.0.1"
+version = "0.1.0"
 requires-python = ">=3.9"
 authors = [
   {name = "Fabien RÉTIF", email = "fabien.retif@snale.net"},
@@ -42,6 +42,8 @@ Repository = "https://github.com/snale-net/config-builder"
 
 [tool.hatch.build.targets.wheel]
 packages = ['configbuilder']
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.uv.sources]
 # These names must match the names as defined in the pyproject.toml of the workspace items,
