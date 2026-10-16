@@ -1,0 +1,76 @@
+PROJECT '{{candidate.config_name}}' '{{candidate.config_name[0:3]}}'
+$
+$ Definition de la configuration
+$###############################
+MODE NONSTATIONARY TWODIMENSIONAL
+$
+$ Definition de la grille
+$###############################
+$
+COORD SPHERICAL
+SET NAUTICAL
+$
+SET LEVEL 0.0
+
+$
+CGRID CURVILINEAR {{candidate.x_size-1}} {{candidate.y_size-1}} CIRCLE {{candidate.nb_angle_section}} {{candidate.start_freq}} {{candidate.start_freq+(candidate.incr_freq*candidate.nb_freq)}} {{candidate.nb_freq-1}}
+READGRID COORD 1. 'bathy/coords.dat' 5 0 1
+$
+INPGRID BOTTOM CURVILINEAR
+$EXC -9999.
+READINP BOTTOM 1. 'bathy/bathy.dat' 5
+
+$
+$ Definition de la physique
+$##############################
+$
+$OFF QUAD
+$
+$ Definition des forcages
+$##############################
+$
+$**** Forcage du vent constant ********
+WIND 10.0 0.0
+$
+$**** Forcage du vent ECMWF ********
+$INPGRID WIND REGULAR -152.40 -17 0 1 4 0.25 0.25 NONSTATIONARY {{ candidate.start_time.strftime('%Y%m%d.%H%M%S') }} 3 HR
+$READINP WIND 1. 'wind_forcing.dat' 1 0 1 1
+$
+$ Definition de l'etat initial
+$###############################
+$
+$ Spectre initial avec le vent local
+INITIAL DEFAULT
+$
+$
+$ Definition des conditions aux limites
+$###############################
+$
+$BOUNDSPEC SIDE 1 CCW CONSTANT PAR 1.0 8.0 180.0
+$BOUNDSPEC SIDE 2 CCW CONSTANT PAR 1.0 8.0 180.0
+$BOUNDSPEC SIDE 3 CCW CONSTANT PAR 1.0 8.0 180.0 
+$BOUNDSPEC SIDE 4 CCW CONSTANT PAR 1.0 8.0 270.0
+$BOUNDSPEC SIDE 3 CCW CONSTANT FILE 'example_spectre_boundaries.bnd' 1
+$
+$ Definition des points de sorties
+$###############################
+$
+$POINTS 'JESSICA' -152.27348 -16.46318
+
+$
+$ Definition des sorties
+$#################################
+$
+$**** Au point ********
+$TABLE 'JESSICA' HEADER 'point_JESSICA.tab' TIME XP YP BOTLEV WATLEV HS TM01 DIR DSPR WIND OUTPUT 20180701.000000 10 MIN
+$
+$**** Graphique ********
+BLOCK 'COMPGRID' NOHEAD 'graphiques_output.mat' TIME XP YP BOTLEV WATLEV HS TM01 DIR DSPR WIND OUTPUT {{ candidate.start_time.strftime('%Y%m%d.%H%M%S') }} 3 MIN
+$
+$ Definition temporelle du calcul
+$#############################
+COMPUTE NONSTAT {{ candidate.start_time.strftime('%Y%m%d.%H%M%S') }} {{candidate.global_time_step}} SEC {{ candidate.end_time.strftime('%Y%m%d.%H%M%S') }}
+$
+$ Fin du calcul
+$#############################
+STOP

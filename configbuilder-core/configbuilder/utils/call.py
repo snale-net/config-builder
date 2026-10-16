@@ -21,8 +21,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import logging
 import subprocess
-from configbuilder.builder.exception.ExecutionError import ExecutionError
+from configbuilder.exception.ExecutionError import ExecutionError
 
 def execute(commands,cwd=None,env=None):
 
@@ -52,7 +53,7 @@ def execute(commands,cwd=None,env=None):
 
         while not finished:
             output = process.stdout.readline()
-            print(output.strip())
+            logging.info(output.strip())
             # Do something else
             return_code = process.poll()
 
@@ -66,10 +67,10 @@ def execute(commands,cwd=None,env=None):
             if return_code is not None:
                 # Process has finished, read rest of the output
                 for output in process.stdout.readlines():
-                    print(output.strip())
+                    logging.info(output.strip())
 
                 if return_code != 0 :
-                    print(process.stderr.readlines())
+                    logging.error(process.stderr.readlines())
                     raise ExecutionError("Execution", output.strip(), 1005)
 
                 finished=True
