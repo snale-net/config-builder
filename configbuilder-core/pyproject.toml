@@ -30,6 +30,8 @@ authors = [
   {name = "Fabien RÉTIF", email = "fabien.retif@snale.net"},
 ]
 description = " "
+license = "MIT"
+license-files = ["LICEN[CS]E.*"]
 
 dependencies = [
     "jinja2>=3.0.0"
@@ -37,7 +39,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://lab.snale.net/"
-Documentation = " "
+Documentation = "https://readthedocs.org"
 Repository = "https://github.com/snale-net/model-configbuilder"
 
 [tool.hatch.build.targets.wheel]

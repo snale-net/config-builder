@@ -20,7 +20,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://lab.snale.net/"
-Documentation = " "
+Documentation = "https://readthedocs.org"
 Repository = "https://github.com/snale-net/model-configbuilder"
 
 [tool.uv.sources]
