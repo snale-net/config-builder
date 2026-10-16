@@ -48,7 +48,7 @@ jobs:
     if: needs.release-checks.outputs.provider-name != ''
     environment:
       name: pypi
-      url: https://pypi.org/p/configbuilder-providers-${{ needs.release-checks.outputs.provider-name }}
+      url: https://pypi.org/p/model-configbuilder-providers-${{ needs.release-checks.outputs.provider-name }}
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:

@@ -23,7 +23,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "configbuilder"
+name = "model-configbuilder"
 version = "0.1.0"
 requires-python = ">=3.9"
 authors = [
@@ -35,28 +35,28 @@ license = "MIT"
 license-files = ["LICEN[CS]E.*"]
 
 dependencies = [
-    "configbuilder-core==0.1.0",
+   "model-configbuilder-core==0.1.0",
 ]
 packages = []
 
 [project.urls]
 Homepage = "https://lab.snale.net/"
 Documentation = " "
-Repository = "https://github.com/snale-net/config-builder"
+Repository = "https://github.com/snale-net/model-configbuilder"
 
 [tool.setuptools.packages.find]
 exclude = ["configbuilder.providers","configbuilder.providers.*","*.tests", "*.tests.*", "tests.*", "tests"]
 
 [project.optional-dependencies]
 "swan" = [
-    "configbuilder-providers-swan"
+    "model-configbuilder-providers-swan"
 ]
 "ww3" = [
-    "configbuilder-providers-ww3"
+    "model-configbuilder-providers-ww3"
 ]
 "all" = [
-    "configbuilder-providers-swan",  
-    "configbuilder-providers-ww3",
+    "model-configbuilder-providers-swan",
+    "model-configbuilder-providers-ww3",
 ]
 
 
@@ -66,7 +66,7 @@ exclude = ["configbuilder.providers","configbuilder.providers.*","*.tests", "*.t
 # pythonpath in basically random order and pytest does not understand legacy namespace packages and cannot
 # use namespace packages effectively when collecting tests.
 pythonpath = [
-    "configbuilder-core"
+    "model-configbuilder-core"
 ]
 testpaths = [
     "tests",
@@ -75,13 +75,18 @@ asyncio_default_fixture_loop_scope = "function"
 log_cli = true
 log_cli_level = "DEBUG"
 
+[tool.hatch.build.targets.wheel]
+packages = ['configbuilder']
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.uv.sources]
 # These names must match the names as defined in the pyproject.toml of the workspace items,
 # *not* the workspace folder paths
-configbuilder = {workspace = true}
-configbuilder-core = {workspace = true}
-configbuilder-providers-swan = {workspace = true}
-configbuilder-providers-ww3 = {workspace = true}
+model-configbuilder = {workspace = true}
+model-configbuilder-core = {workspace = true}
+model-configbuilder-providers-swan = {workspace = true}
+model-configbuilder-providers-ww3 = {workspace = true}
 
 [tool.uv.workspace]
 members = [

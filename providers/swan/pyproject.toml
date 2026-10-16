@@ -23,28 +23,28 @@ requires = ["flit_core==3.12.0"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "configbuilder-providers-swan"
+name = "model-configbuilder-providers-swan"
 version = "0.1"
 requires-python = ">=3.9"
 authors = [
   {name = "Fabien RÉTIF", email = "fabien.retif@snale.net"},
 ]
-description = "Provider package configbuilder-providers-swan for ConfigBuilder"
+description = "Provider package model-configbuilder-providers-swan for ConfigBuilder"
 readme = "README.md"
 
 dependencies = [
-    "configbuilder==0.1"
+    "model-configbuilder==0.1"
 ]
 
 [project.urls]
 Homepage = "https://lab.snale.net/"
 Documentation = " "
-Repository = "https://github.com/snale-net/pyConfigBuilder"
+Repository = "https://github.com/snale-net/model-configbuilder"
 
 [tool.uv.sources]
 # These names must match the names as defined in the pyproject.toml of the workspace items,
 # *not* the workspace folder paths
-configbuilder = {workspace = true}
+model-configbuilder = {workspace = true}
 
 [tool.flit.module]
 name = "configbuilder.providers.swan"

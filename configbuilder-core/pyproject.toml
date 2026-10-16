@@ -23,7 +23,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "configbuilder-core"
+name = "model-configbuilder-core"
 version = "0.1.0"
 requires-python = ">=3.9"
 authors = [
@@ -38,7 +38,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://lab.snale.net/"
 Documentation = " "
-Repository = "https://github.com/snale-net/config-builder"
+Repository = "https://github.com/snale-net/model-configbuilder"
 
 [tool.hatch.build.targets.wheel]
 packages = ['configbuilder']
@@ -48,4 +48,4 @@ allow-direct-references = true
 [tool.uv.sources]
 # These names must match the names as defined in the pyproject.toml of the workspace items,
 # *not* the workspace folder paths
-configbuilder-core = {workspace = true}
+model-configbuilder-core = {workspace = true}
